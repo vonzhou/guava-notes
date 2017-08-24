@@ -1,3 +1,78 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Splitter 切分字符串
+
+EventBus
+
+Lists.partition 切分 List
+
+
+
+
+
+
+
+
+
+
+--------------
+
+
+
+
 # Guava: Google Core Libraries for Java
 
 [![Build Status](https://travis-ci.org/google/guava.svg?branch=master)](https://travis-ci.org/google/guava)
@@ -104,3 +179,5 @@ correctly in other environments.
 [guava-snapshot-api-docs]: http://google.github.io/guava/releases/snapshot/api/docs/
 [guava-snapshot-api-diffs]: http://google.github.io/guava/releases/snapshot/api/diffs/
 [Guava Explained]: https://github.com/google/guava/wiki/Home
+
+source from [google/guava](https://github.com/google/guava)
