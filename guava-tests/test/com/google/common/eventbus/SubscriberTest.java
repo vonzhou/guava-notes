@@ -31,121 +31,131 @@ import junit.framework.TestCase;
  */
 public class SubscriberTest extends TestCase {
 
-  private static final Object FIXTURE_ARGUMENT = new Object();
+    private static final Object FIXTURE_ARGUMENT = new Object();
 
-  private EventBus bus;
-  private boolean methodCalled;
-  private Object methodArgument;
+    private EventBus bus;
+    private boolean methodCalled;
+    private Object methodArgument;
 
-  @Override
-  protected void setUp() throws Exception {
-    bus = new EventBus();
-    methodCalled = false;
-    methodArgument = null;
-  }
-
-  public void testCreate() {
-    Subscriber s1 = Subscriber.create(bus, this, getTestSubscriberMethod("recordingMethod"));
-    assertThat(s1).isInstanceOf(Subscriber.SynchronizedSubscriber.class);
-
-    // a thread-safe method should not create a synchronized subscriber
-    Subscriber s2 = Subscriber.create(bus, this, getTestSubscriberMethod("threadSafeMethod"));
-    assertThat(s2).isNotInstanceOf(Subscriber.SynchronizedSubscriber.class);
-  }
-
-  public void testInvokeSubscriberMethod_basicMethodCall() throws Throwable {
-    Method method = getTestSubscriberMethod("recordingMethod");
-    Subscriber subscriber = Subscriber.create(bus, this, method);
-
-    subscriber.invokeSubscriberMethod(FIXTURE_ARGUMENT);
-
-    assertTrue("Subscriber must call provided method", methodCalled);
-    assertTrue("Subscriber argument must be exactly the provided object.",
-        methodArgument == FIXTURE_ARGUMENT);
-  }
-
-  public void testInvokeSubscriberMethod_exceptionWrapping() throws Throwable {
-    Method method = getTestSubscriberMethod("exceptionThrowingMethod");
-    Subscriber subscriber = Subscriber.create(bus, this, method);
-
-    try {
-      subscriber.invokeSubscriberMethod(FIXTURE_ARGUMENT);
-      fail("Subscribers whose methods throw must throw InvocationTargetException");
-    } catch (InvocationTargetException expected) {
-      assertThat(expected.getCause()).isInstanceOf(IntentionalException.class);
+    @Override
+    protected void setUp() throws Exception {
+        bus = new EventBus();
+        methodCalled = false;
+        methodArgument = null;
     }
-  }
 
-  public void testInvokeSubscriberMethod_errorPassthrough() throws Throwable {
-    Method method = getTestSubscriberMethod("errorThrowingMethod");
-    Subscriber subscriber = Subscriber.create(bus, this, method);
+    /**
+     * 如果事件处理方法有 AllowConcurrentEvents 注解，则直接创建 Subscriber，无需在同步块中执行
+     */
+    public void testCreate() {
+        Subscriber s1 = Subscriber.create(bus, this, getTestSubscriberMethod("recordingMethod"));
+        assertThat(s1).isInstanceOf(Subscriber.SynchronizedSubscriber.class);
 
-    try {
-      subscriber.invokeSubscriberMethod(FIXTURE_ARGUMENT);
-      fail("Subscribers whose methods throw Errors must rethrow them");
-    } catch (JudgmentError expected) {
+        // a thread-safe method should not create a synchronized subscriber
+        Subscriber s2 = Subscriber.create(bus, this, getTestSubscriberMethod("threadSafeMethod"));
+        assertThat(s2).isNotInstanceOf(Subscriber.SynchronizedSubscriber.class);
     }
-  }
 
-  public void testEquals() throws Exception {
-    Method charAt = String.class.getMethod("charAt", int.class);
-    Method concat = String.class.getMethod("concat", String.class);
-    new EqualsTester()
-        .addEqualityGroup(
-            Subscriber.create(bus, "foo", charAt), Subscriber.create(bus, "foo", charAt))
-        .addEqualityGroup(Subscriber.create(bus, "bar", charAt))
-        .addEqualityGroup(Subscriber.create(bus, "foo", concat))
-        .testEquals();
-  }
+    /**
+     * Subscriber 触发
+     */
+    public void testInvokeSubscriberMethod_basicMethodCall() throws Throwable {
+        Method method = getTestSubscriberMethod("recordingMethod");
+        Subscriber subscriber = Subscriber.create(bus, this, method);
 
-  private Method getTestSubscriberMethod(String name) {
-    try {
-      return getClass().getDeclaredMethod(name, Object.class);
-    } catch (NoSuchMethodException e) {
-      throw new AssertionError();
+        subscriber.invokeSubscriberMethod(FIXTURE_ARGUMENT);
+
+        assertTrue("Subscriber must call provided method", methodCalled);
+        assertTrue("Subscriber argument must be exactly the provided object.", methodArgument == FIXTURE_ARGUMENT);
     }
-  }
 
-  /**
-   * Records the provided object in {@link #methodArgument} and sets {@link #methodCalled}.  This
-   * method is called reflectively by Subscriber during tests, and must remain public.
-   *
-   * @param arg argument to record.
-   */
-  @Subscribe
-  public void recordingMethod(Object arg) {
-    assertFalse(methodCalled);
-    methodCalled = true;
-    methodArgument = arg;
-  }
+    /**
+     * Exception 
+     */
+    public void testInvokeSubscriberMethod_exceptionWrapping() throws Throwable {
+        Method method = getTestSubscriberMethod("exceptionThrowingMethod");
+        Subscriber subscriber = Subscriber.create(bus, this, method);
 
-  @Subscribe
-  public void exceptionThrowingMethod(Object arg) throws Exception {
-    throw new IntentionalException();
-  }
+        try {
+            subscriber.invokeSubscriberMethod(FIXTURE_ARGUMENT);
+            fail("Subscribers whose methods throw must throw InvocationTargetException");
+        } catch (InvocationTargetException expected) {
+            System.out.println(expected);
+            assertThat(expected.getCause()).isInstanceOf(IntentionalException.class);
+        }
+    }
 
-  /**
-   * Local exception subclass to check variety of exception thrown.
-   */
-  class IntentionalException extends Exception {
+    /**
+     * Error
+     */
+    public void testInvokeSubscriberMethod_errorPassthrough() throws Throwable {
+        Method method = getTestSubscriberMethod("errorThrowingMethod");
+        Subscriber subscriber = Subscriber.create(bus, this, method);
 
-    private static final long serialVersionUID = -2500191180248181379L;
-  }
+        try {
+            subscriber.invokeSubscriberMethod(FIXTURE_ARGUMENT);
+            fail("Subscribers whose methods throw Errors must rethrow them");
+        } catch (JudgmentError expected) {
+        }
+    }
 
-  @Subscribe
-  public void errorThrowingMethod(Object arg) {
-    throw new JudgmentError();
-  }
+    public void testEquals() throws Exception {
+        Method charAt = String.class.getMethod("charAt", int.class);
+        Method concat = String.class.getMethod("concat", String.class);
+        new EqualsTester().addEqualityGroup(Subscriber.create(bus, "foo", charAt), Subscriber.create(bus, "foo", charAt))
+                        .addEqualityGroup(Subscriber.create(bus, "bar", charAt))
+                        .addEqualityGroup(Subscriber.create(bus, "foo", concat)).testEquals();
+    }
 
-  @Subscribe @AllowConcurrentEvents
-  public void threadSafeMethod(Object arg) {
-  }
+    private Method getTestSubscriberMethod(String name) {
+        try {
+            return getClass().getDeclaredMethod(name, Object.class);
+        } catch (NoSuchMethodException e) {
+            throw new AssertionError();
+        }
+    }
 
-  /**
-   * Local Error subclass to check variety of error thrown.
-   */
-  class JudgmentError extends Error {
+    /**
+     * Records the provided object in {@link #methodArgument} and sets {@link #methodCalled}.  This
+     * method is called reflectively by Subscriber during tests, and must remain public.
+     *
+     * @param arg argument to record.
+     */
+    @Subscribe
+    public void recordingMethod(Object arg) {
+        assertFalse(methodCalled);
+        methodCalled = true;
+        methodArgument = arg; // 记录事件对象
+    }
 
-    private static final long serialVersionUID = 634248373797713373L;
-  }
+    @Subscribe
+    public void exceptionThrowingMethod(Object arg) throws Exception {
+        throw new IntentionalException();
+    }
+
+    /**
+     * Local exception subclass to check variety of exception thrown.
+     */
+    class IntentionalException extends Exception {
+
+        private static final long serialVersionUID = -2500191180248181379L;
+    }
+
+    @Subscribe
+    public void errorThrowingMethod(Object arg) {
+        throw new JudgmentError();
+    }
+
+    @Subscribe
+    @AllowConcurrentEvents
+    public void threadSafeMethod(Object arg) {
+    }
+
+    /**
+     * Local Error subclass to check variety of error thrown.
+     */
+    class JudgmentError extends Error {
+
+        private static final long serialVersionUID = 634248373797713373L;
+    }
 }
