@@ -18,11 +18,13 @@ package com.google.common.eventbus;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
+
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
+
 import junit.framework.TestCase;
 
 /**
@@ -56,7 +58,7 @@ public class EventBusTest extends TestCase {
      * 订阅者事件处理方法参数类型多态
      * Tests that events are distributed to any subscribers to their type or any
      * supertype, including interfaces and superclasses.
-     *
+     * <p>
      * Also checks delivery ordering in such cases.
      */
     public void testPolymorphicDistribution() {
@@ -130,7 +132,7 @@ public class EventBusTest extends TestCase {
         assertEquals("Event should be available.", EVENT, handler.context.getEvent());
         assertEquals("Subscriber should be available.", subscriber, handler.context.getSubscriber());
         assertEquals("Method should be available.", subscriber.getClass().getMethod("throwExceptionOn", String.class),
-                     handler.context.getSubscriberMethod());
+                handler.context.getSubscriberMethod());
     }
 
     /**
@@ -316,7 +318,6 @@ public class EventBusTest extends TestCase {
      * A collector for DeadEvents.
      *
      * @author cbiffle
-     *
      */
     public static class GhostCatcher {
         private List<DeadEvent> events = Lists.newArrayList();

@@ -103,6 +103,9 @@ public class SubscriberRegistryTest extends TestCase {
         assertEquals(2, Iterators.size(registry.getSubscribers(1)));
     }
 
+    /**
+     * getSubscribers 返回的是一个快照, CopyOnWriteArraySet
+     */
     public void testGetSubscribers_returnsImmutableSnapshot() {
         StringSubscriber s1 = new StringSubscriber();
         StringSubscriber s2 = new StringSubscriber();
