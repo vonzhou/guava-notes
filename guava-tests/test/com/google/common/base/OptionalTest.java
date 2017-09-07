@@ -62,6 +62,9 @@ public final class OptionalTest extends TestCase {
         assertFalse(optionalName.isPresent());
     }
 
+    /**
+     * 包装成 Present，会检查NP
+     */
     public void testOf() {
         assertEquals("training", Optional.of("training").get());
     }
@@ -105,6 +108,9 @@ public final class OptionalTest extends TestCase {
         assertEquals("training", Optional.of("training").get());
     }
 
+    /**
+     * Absent 和 Present 的 or 方法实现
+     */
     public void testOr_T_present() {
         assertEquals("a", Optional.of("a").or("default"));
     }
@@ -161,6 +167,9 @@ public final class OptionalTest extends TestCase {
         assertTrue("Returned set should be empty", Optional.absent().asSet().isEmpty());
     }
 
+    /**
+     * SingletonSet 未实现 add 方法
+     */
     public void testAsSet_presentIsImmutable() {
         Set<String> presentAsSet = Optional.of("a").asSet();
         try {
@@ -170,6 +179,9 @@ public final class OptionalTest extends TestCase {
         }
     }
 
+    /**
+     * EmptySet 未实现 add 方法
+     */
     public void testAsSet_absentIsImmutable() {
         Set<Object> absentAsSet = Optional.absent().asSet();
         try {
@@ -179,6 +191,9 @@ public final class OptionalTest extends TestCase {
         }
     }
 
+    /**
+     * Functions.toStringFunction() 会调用对象的 toString 方法
+     */
     public void testTransform_absent() {
         assertEquals(Optional.absent(), Optional.absent().transform(Functions.identity()));
         assertEquals(Optional.absent(), Optional.absent().transform(Functions.toStringFunction()));
@@ -192,39 +207,38 @@ public final class OptionalTest extends TestCase {
         assertEquals(Optional.of("42"), Optional.of(42).transform(Functions.toStringFunction()));
     }
 
+    /**
+     * 对于 function 应用之后的返回值 会进行判空
+     */
     public void testTransform_present_functionReturnsNull() {
         try {
-            Optional<String> unused =
-                    Optional.of("a")
-                            .transform(
-                                    new Function<String, String>() {
-                                        @Override
-                                        public String apply(String input) {
-                                            return null;
-                                        }
-                                    });
+            Optional<String> unused = Optional.of("a").transform(new Function<String, String>() {
+                @Override
+                public String apply(String input) {
+                    return null;
+                }
+            });
             fail("Should throw if Function returns null.");
         } catch (NullPointerException expected) {
         }
     }
 
+    /**
+     * Absent 应用任何的非空 function 都会返回 Absent
+     */
     public void testTransform_absent_functionReturnsNull() {
-        assertEquals(Optional.absent(),
-                Optional.absent().transform(
-                        new Function<Object, Object>() {
-                            @Override
-                            public Object apply(Object input) {
-                                return null;
-                            }
-                        }));
+        assertEquals(Optional.absent(), Optional.absent().transform(new Function<Object, Object>() {
+            @Override
+            public Object apply(Object input) {
+                return null;
+            }
+        }));
     }
 
     public void testEqualsAndHashCode() {
-        new EqualsTester()
-                .addEqualityGroup(Optional.absent(), reserialize(Optional.absent()))
-                .addEqualityGroup(Optional.of(new Long(5)), reserialize(Optional.of(new Long(5))))
-                .addEqualityGroup(Optional.of(new Long(42)), reserialize(Optional.of(new Long(42))))
-                .testEquals();
+        new EqualsTester().addEqualityGroup(Optional.absent(), reserialize(Optional.absent()))
+                        .addEqualityGroup(Optional.of(new Long(5)), reserialize(Optional.of(new Long(5))))
+                        .addEqualityGroup(Optional.of(new Long(42)), reserialize(Optional.of(new Long(42)))).testEquals();
     }
 
     public void testToString_absent() {
@@ -236,34 +250,30 @@ public final class OptionalTest extends TestCase {
     }
 
     public void testPresentInstances_allPresent() {
-        List<Optional<String>> optionals =
-                ImmutableList.of(Optional.of("a"), Optional.of("b"), Optional.of("c"));
+        List<Optional<String>> optionals = ImmutableList.of(Optional.of("a"), Optional.of("b"), Optional.of("c"));
         assertThat(Optional.presentInstances(optionals)).containsExactly("a", "b", "c").inOrder();
     }
 
     public void testPresentInstances_allAbsent() {
-        List<Optional<Object>> optionals =
-                ImmutableList.of(Optional.absent(), Optional.absent());
+        List<Optional<Object>> optionals = ImmutableList.of(Optional.absent(), Optional.absent());
         assertThat(Optional.presentInstances(optionals)).isEmpty();
     }
 
     public void testPresentInstances_somePresent() {
-        List<Optional<String>> optionals =
-                ImmutableList.of(Optional.of("a"), Optional.<String>absent(), Optional.of("c"));
+        List<Optional<String>> optionals = ImmutableList.of(Optional.of("a"), Optional.<String> absent(), Optional.of("c"));
         assertThat(Optional.presentInstances(optionals)).containsExactly("a", "c").inOrder();
     }
 
     public void testPresentInstances_callingIteratorTwice() {
-        List<Optional<String>> optionals =
-                ImmutableList.of(Optional.of("a"), Optional.<String>absent(), Optional.of("c"));
+        List<Optional<String>> optionals = ImmutableList.of(Optional.of("a"), Optional.<String> absent(), Optional.of("c"));
         Iterable<String> onlyPresent = Optional.presentInstances(optionals);
         assertThat(onlyPresent).containsExactly("a", "c").inOrder();
         assertThat(onlyPresent).containsExactly("a", "c").inOrder();
     }
 
     public void testPresentInstances_wildcards() {
-        List<Optional<? extends Number>> optionals =
-                ImmutableList.<Optional<? extends Number>>of(Optional.<Double>absent(), Optional.of(2));
+        List<Optional<? extends Number>> optionals = ImmutableList.<Optional<? extends Number>> of(Optional.<Double> absent(),
+                                                                                                   Optional.of(2));
         Iterable<Number> onlyPresent = Optional.presentInstances(optionals);
         assertThat(onlyPresent).containsExactly(2).inOrder();
     }
@@ -273,13 +283,13 @@ public final class OptionalTest extends TestCase {
     }
 
     private static FluentIterable<? extends Number> getSomeNumbers() {
-        return FluentIterable.from(ImmutableList.<Number>of());
+        return FluentIterable.from(ImmutableList.<Number> of());
     }
 
-  /*
-   * The following tests demonstrate the shortcomings of or() and test that the casting workaround
-   * mentioned in the method Javadoc does in fact compile.
-   */
+    /*
+     * The following tests demonstrate the shortcomings of or() and test that the casting workaround
+     * mentioned in the method Javadoc does in fact compile.
+     */
 
     @SuppressWarnings("unused") // compilation test
     public void testSampleCodeError1() {
@@ -307,7 +317,7 @@ public final class OptionalTest extends TestCase {
         // Sadly, the following is what users will have to do in some circumstances.
 
         @SuppressWarnings("unchecked") // safe covariant cast
-                Optional<Number> first = (Optional) numbers.first();
+        Optional<Number> first = (Optional) numbers.first();
         Number value = first.or(0.5); // fine
     }
 
