@@ -5,6 +5,8 @@
 
 Optional
 
+Preconditions : checkArgument，checkNotNull
+
 Splitter/Joiner
 
 EventBus
