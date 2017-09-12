@@ -33,6 +33,7 @@ public final class Strings {
     }
 
     /**
+     * 常用， 相关 MoreObjects.firstNonNull()
      * Returns the given string if it is non-null; the empty string otherwise.
      *
      * @param string the string to test and possibly return
