@@ -33,6 +33,7 @@ import java.net.URLClassLoader;
 import java.util.HashSet;
 import java.util.Set;
 
+import com.sun.xml.internal.bind.v2.runtime.output.SAXOutput;
 import junit.framework.TestCase;
 
 /**
@@ -49,7 +50,27 @@ public class EnumsTest extends TestCase {
         POODLE,
     }
 
-    private enum OtherEnum {}
+    private enum OtherEnum {
+    }
+
+    private enum MyEnum {
+        OK(1, "ok==="),
+        ERROR(2, "error===");
+
+        int code;
+        String msg;
+
+        MyEnum(int code, String msg) {
+            this.code = code;
+            this.msg = msg;
+        }
+    }
+
+    public void testEnum() {
+        System.out.println(MyEnum.OK.toString());
+        System.out.println(Enum.valueOf(MyEnum.class, "OK"));
+        System.out.println(Enum.valueOf(MyEnum.class, "NOExist"));
+    }
 
     public void testGetIfPresent() {
         assertThat(Enums.getIfPresent(TestEnum.class, "CHEETO")).hasValue(TestEnum.CHEETO);
@@ -65,6 +86,9 @@ public class EnumsTest extends TestCase {
         assertThat(Enums.getIfPresent(TestEnum.class, "POODLE")).hasValue(TestEnum.POODLE);
     }
 
+    /**
+     * 因为是根据 Enum 的 name 来映射的
+     */
     public void testGetIfPresent_caseSensitive() {
         assertThat(Enums.getIfPresent(TestEnum.class, "cHEETO")).isAbsent();
         assertThat(Enums.getIfPresent(TestEnum.class, "Honda")).isAbsent();
@@ -91,8 +115,7 @@ public class EnumsTest extends TestCase {
         URLClassLoader myLoader = (URLClassLoader) getClass().getClassLoader();
         URLClassLoader shadowLoader = new URLClassLoader(myLoader.getURLs(), null);
         @SuppressWarnings("unchecked")
-        Class<TestEnum> shadowTestEnum =
-                (Class<TestEnum>) Class.forName(TestEnum.class.getName(), false, shadowLoader);
+        Class<TestEnum> shadowTestEnum = (Class<TestEnum>) Class.forName(TestEnum.class.getName(), false, shadowLoader);
         assertNotSame(shadowTestEnum, TestEnum.class);
         // We can't write Set<TestEnum> because that is a Set of the TestEnum from the original
         // ClassLoader.
@@ -102,7 +125,7 @@ public class EnumsTest extends TestCase {
             assertThat(result).isPresent();
             shadowConstants.add(result.get());
         }
-        assertEquals(ImmutableSet.<Object>copyOf(shadowTestEnum.getEnumConstants()), shadowConstants);
+        assertEquals(ImmutableSet.<Object> copyOf(shadowTestEnum.getEnumConstants()), shadowConstants);
         Optional<TestEnum> result = Enums.getIfPresent(shadowTestEnum, "blibby");
         assertThat(result).isAbsent();
         return new WeakReference<ClassLoader>(shadowLoader);
@@ -117,6 +140,9 @@ public class EnumsTest extends TestCase {
         assertNull(converter.reverse().convert(null));
     }
 
+    /**
+     * Enum.valueOf()  会抛出空指针
+     */
     public void testStringConverter_convertError() {
         Converter<String, TestEnum> converter = Enums.stringConverter(TestEnum.class);
         try {
@@ -148,9 +174,8 @@ public class EnumsTest extends TestCase {
 
     @GwtIncompatible // Class.getName()
     public void testStringConverter_toString() {
-        assertEquals(
-                "Enums.stringConverter(com.google.common.base.EnumsTest$TestEnum.class)",
-                Enums.stringConverter(TestEnum.class).toString());
+        assertEquals("Enums.stringConverter(com.google.common.base.EnumsTest$TestEnum.class)",
+                     Enums.stringConverter(TestEnum.class).toString());
     }
 
     public void testStringConverter_serialization() {
@@ -168,10 +193,14 @@ public class EnumsTest extends TestCase {
     }
 
     private enum AnEnum {
-        @ExampleAnnotation FOO,
+        @ExampleAnnotation
+        FOO,
         BAR
     }
 
+    /**
+     * 枚举中的每个常量其实都是该类型的实例（Enum类型），该枚举类有自身的实例组合而成
+     */
     @GwtIncompatible // reflection
     public void testGetField() {
         Field foo = Enums.getField(AnEnum.FOO);
@@ -186,7 +215,6 @@ public class EnumsTest extends TestCase {
     private enum CDEnum {
         A(0, "0000");
 
-
         CDEnum(int code, String desc) {
             this.code = code;
             this.desc = desc;
@@ -196,7 +224,7 @@ public class EnumsTest extends TestCase {
         String desc;
     }
 
-    public void testEnumWithConstructor(){
+    public void testEnumWithConstructor() {
         System.out.println(Enums.getIfPresent(CDEnum.class, "A"));
     }
 }
