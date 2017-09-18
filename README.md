@@ -3,9 +3,10 @@
 
 ## 常用
 
-Optional
+* Preconditions（checkArgument，checkNotNull） 实现断言编程
+* Optional 可能存在
+* Multimap
 
-Preconditions : checkArgument，checkNotNull
 
 Splitter/Joiner
 
